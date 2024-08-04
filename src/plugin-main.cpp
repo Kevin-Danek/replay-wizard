@@ -29,6 +29,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
+QDockWidget *dock = nullptr;
+
 bool obs_module_load(void)
 {
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
@@ -41,17 +43,19 @@ bool obs_module_load(void)
     QMainWindow* mainWindow = static_cast<QMainWindow*>(obs_frontend_get_main_window());
 
     // Create a simple dock widget
-    QDockWidget* dock = new QDockWidget("My Dock", mainWindow);
+    dock = new QDockWidget("Replay Wizard", mainWindow);
 
     // Create a widget to hold the content
     QWidget* contentWidget = new QWidget(dock);
     QVBoxLayout* layout = new QVBoxLayout(contentWidget);
 
     // Add a label with some text
-    QLabel* label = new QLabel("This is some text in the dock", contentWidget);
+    QLabel* label = new QLabel("Tady bude seznam videí ty joudo", contentWidget);
     layout->addWidget(label);
 
     dock->setWidget(contentWidget);
+
+    //obs_frontend_add_dock_by_id("ReaplyWWWWW", "RRRR", &dock);
 
 	return true;
 }
