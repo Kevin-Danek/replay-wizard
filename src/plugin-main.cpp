@@ -25,6 +25,13 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <qdockwidget.h>
 #include <qwidget.h>
 #include <qlabel.h>
+#include <qlineedit.h>
+#include <qtextedit.h>
+#include <qpushbutton.h>
+
+#include <string>
+#include <iostream>
+#include <filesystem>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -36,11 +43,12 @@ bool obs_module_load(void)
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
     obs_log(LOG_WARNING, "Qt version: %s", QT_VERSION_STR);
 
-    const auto main_window = static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	obs_frontend_push_ui_translation(obs_module_get_string);
 
-    // Get the main OBS window
     QMainWindow* mainWindow = static_cast<QMainWindow*>(obs_frontend_get_main_window());
+
+    // Path to recordings
+    const auto recordingsPath = obs_frontend_get_current_record_output_path();
 
     // Create a simple dock widget
     dock = new QDockWidget("Replay Wizard", mainWindow);
@@ -50,10 +58,33 @@ bool obs_module_load(void)
     QVBoxLayout* layout = new QVBoxLayout(contentWidget);
 
     // Add a label with some text
-    QLabel* label = new QLabel("Tady bude seznam videí ty joudo", contentWidget);
-    layout->addWidget(label);
+    QLabel* label = new QLabel("Recording Path:", contentWidget);
+    
+    // Show path to recordings
+    const auto input = new QLineEdit(contentWidget);
+    input->setReadOnly(true);
+    input->setText(recordingsPath);
 
+    const auto textEdit = new QTextEdit(contentWidget);
+    
+    layout->addWidget(label);
+    layout->addWidget(input);
+
+    for (const auto & entry : std::filesystem::directory_iterator(recordingsPath)) {
+        std::string filepath = entry.path().string();
+        
+        if (filepath.find("Replay") != std::string::npos) {
+
+            QPushButton* button = new QPushButton(QString::fromStdString(filepath), contentWidget);
+            button->setText(entry.path().string().c_str());
+            layout->addWidget(button);
+        }
+    }
+    
+    layout->addWidget(textEdit);
     dock->setWidget(contentWidget);
+
+    obs_log(LOG_INFO, recordingsPath);
 
     //obs_frontend_add_dock_by_id("ReaplyWWWWW", "RRRR", &dock);
 
