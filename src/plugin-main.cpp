@@ -28,6 +28,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <qlineedit.h>
 #include <qtextedit.h>
 #include <qpushbutton.h>
+#include <qobject.h>
+#include <qmessagebox.h>
 
 #include <string>
 #include <iostream>
@@ -35,8 +37,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
-
-QDockWidget *dock = nullptr;
 
 bool obs_module_load(void)
 {
@@ -50,11 +50,8 @@ bool obs_module_load(void)
     // Path to recordings
     const auto recordingsPath = obs_frontend_get_current_record_output_path();
 
-    // Create a simple dock widget
-    dock = new QDockWidget("Replay Wizard", mainWindow);
-
     // Create a widget to hold the content
-    QWidget* contentWidget = new QWidget(dock);
+    QWidget* contentWidget = new QWidget(mainWindow);
     QVBoxLayout* layout = new QVBoxLayout(contentWidget);
 
     // Add a label with some text
@@ -70,6 +67,7 @@ bool obs_module_load(void)
     layout->addWidget(label);
     layout->addWidget(input);
 
+    // Creating Buttons for Replays
     for (const auto & entry : std::filesystem::directory_iterator(recordingsPath)) {
         std::string filepath = entry.path().string();
         
@@ -78,15 +76,23 @@ bool obs_module_load(void)
             QPushButton* button = new QPushButton(QString::fromStdString(filepath), contentWidget);
             button->setText(entry.path().string().c_str());
             layout->addWidget(button);
+
+            // Connect button clicked signal (optional)
+            QObject::connect(button, &QPushButton::clicked, [mainWindow]() {
+                // Handle button click, e.g., play the file
+                QMessageBox::information(mainWindow, "Info Box", "Message");
+            });
         }
     }
     
     layout->addWidget(textEdit);
-    dock->setWidget(contentWidget);
 
-    obs_log(LOG_INFO, recordingsPath);
-
-    //obs_frontend_add_dock_by_id("ReaplyWWWWW", "RRRR", &dock);
+    try {
+        obs_frontend_add_dock_by_id("ReplayWizardDock", obs_module_text("DOCKTITLE"), contentWidget);
+    } catch (const std::exception& e) {
+        obs_log(LOG_ERROR, "Error adding dock: %s", e.what());
+        // Handle the error, e.g., log it, display a message, or retry
+    }
 
 	return true;
 }
