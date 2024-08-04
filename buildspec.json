@@ -33,13 +33,13 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.example.obs-plugintemplate"
+            "bundleId": "com.example.obs-replaywizard"
         }
     },
-    "name": "obs-plugintemplate",
+    "name": "obs-replaywizard",
     "displayName": "OBS Plugin Template",
-    "version": "1.0.0",
-    "author": "Your Name Here",
+    "version": "0.0.1",
+    "author": "Bahamut731lp",
     "website": "https://example.com",
     "email": "me@example.com",
     "uuids": {
