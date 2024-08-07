@@ -31,6 +31,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <qobject.h>
 #include <qmessagebox.h>
 
+#include <video-item.hpp>
+
 #include <string>
 #include <iostream>
 #include <filesystem>
@@ -40,59 +42,69 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 bool obs_module_load(void)
 {
-	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
-    obs_log(LOG_WARNING, "Qt version: %s", QT_VERSION_STR);
+	obs_log(LOG_INFO, "plugin loaded successfully (version %s)",
+		PLUGIN_VERSION);
+	obs_log(LOG_WARNING, "Qt version: %s", QT_VERSION_STR);
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
 
-    QMainWindow* mainWindow = static_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QMainWindow *mainWindow =
+		static_cast<QMainWindow *>(obs_frontend_get_main_window());
 
-    // Path to recordings
-    const auto recordingsPath = obs_frontend_get_current_record_output_path();
+	// Path to recordings
+	const auto recordingsPath =
+		obs_frontend_get_current_record_output_path();
 
-    // Create a widget to hold the content
-    QWidget* contentWidget = new QWidget(mainWindow);
-    QVBoxLayout* layout = new QVBoxLayout(contentWidget);
+	// Create a widget to hold the content
+	QWidget *contentWidget = new QWidget(mainWindow);
+	QVBoxLayout *layout = new QVBoxLayout(contentWidget);
 
-    // Add a label with some text
-    QLabel* label = new QLabel("Recording Path:", contentWidget);
-    
-    // Show path to recordings
-    const auto input = new QLineEdit(contentWidget);
-    input->setReadOnly(true);
-    input->setText(recordingsPath);
+	// Add a label with some text
+	QLabel *label = new QLabel("Recording Path:", contentWidget);
 
-    const auto textEdit = new QTextEdit(contentWidget);
-    
-    layout->addWidget(label);
-    layout->addWidget(input);
+	// Show path to recordings
+	const auto input = new QLineEdit(contentWidget);
+	input->setReadOnly(true);
+	input->setText(recordingsPath);
 
-    // Creating Buttons for Replays
-    for (const auto & entry : std::filesystem::directory_iterator(recordingsPath)) {
-        std::string filepath = entry.path().string();
-        
-        if (filepath.find("Replay") != std::string::npos) {
+	const auto textEdit = new QTextEdit(contentWidget);
 
-            QPushButton* button = new QPushButton(QString::fromStdString(filepath), contentWidget);
-            button->setText(entry.path().string().c_str());
-            layout->addWidget(button);
+	layout->addWidget(label);
+	layout->addWidget(input);
 
-            // Connect button clicked signal (optional)
-            QObject::connect(button, &QPushButton::clicked, [mainWindow]() {
-                // Handle button click, e.g., play the file
-                QMessageBox::information(mainWindow, "Info Box", "Message");
-            });
-        }
-    }
-    
-    layout->addWidget(textEdit);
+	// Creating Buttons for Replays
+	for (const auto &entry :
+	     std::filesystem::directory_iterator(recordingsPath)) {
+		std::string filepath = entry.path().string();
 
-    try {
-        obs_frontend_add_dock_by_id("ReplayWizardDock", obs_module_text("DOCKTITLE"), contentWidget);
-    } catch (const std::exception& e) {
-        obs_log(LOG_ERROR, "Error adding dock: %s", e.what());
-        // Handle the error, e.g., log it, display a message, or retry
-    }
+		if (filepath.find("Replay") == std::string::npos)
+			continue;
+
+		const auto pathString = QString::fromStdString(filepath);
+		const auto thumbnail = QString::fromStdString(
+			"C:/Users/Kevin Daněk/Pictures/vlcsnap-2023-10-14-23h28m20s895.png");
+		const auto vid = new VideoItem(thumbnail, pathString,
+					       pathString, contentWidget);
+
+		QObject::connect(vid, &VideoItem::clicked, [mainWindow]() {
+			// Handle button click, e.g., play the file
+			QMessageBox::information(mainWindow, "Info Box",
+						 "Message");
+		});
+
+		layout->addWidget(vid);
+	}
+
+	layout->addWidget(textEdit);
+
+	try {
+		obs_frontend_add_dock_by_id("ReplayWizardDock",
+					    obs_module_text("DOCKTITLE"),
+					    contentWidget);
+	} catch (const std::exception &e) {
+		obs_log(LOG_ERROR, "Error adding dock: %s", e.what());
+		// Handle the error, e.g., log it, display a message, or retry
+	}
 
 	return true;
 }
